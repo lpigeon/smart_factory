@@ -1,9 +1,9 @@
 import sys
 import cv2
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton
 from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import csv
@@ -37,13 +37,27 @@ class MainWindow(QWidget):
         self.detect_list = []
 
     def initUI(self):
-        # 레이아웃 설정
-        layout = QHBoxLayout(self)
+        # 전체 레이아웃 설정
+        main_layout = QVBoxLayout(self)
+        
+        # 제목 레이아웃
+        title_layout = QHBoxLayout()
+        
+        # 제목 레이블 추가
+        title_label = QLabel("Smart Factory GUI", self)
+        font = title_label.font()
+        font.setPointSize(font.pointSize() + 5)
+        title_label.setFont(font)
+        title_label.setAlignment(Qt.AlignCenter)
+        title_layout.addWidget(title_label)
+
+        # 상단 레이아웃
+        top_layout = QHBoxLayout()
 
         # 각 레이아웃에 프레임 추가
-        image_layout_frame = QFrame(self)
-        image_layout_frame.setFrameShape(QFrame.Box)
-        image_layout = QVBoxLayout(image_layout_frame)
+        video_layout_frame = QFrame(self)
+        video_layout_frame.setFrameShape(QFrame.Box)
+        video_layout = QVBoxLayout(video_layout_frame)
 
         data_layout_frame = QFrame(self)
         data_layout_frame.setFrameShape(QFrame.Box)
@@ -53,29 +67,65 @@ class MainWindow(QWidget):
         graph_layout_frame.setFrameShape(QFrame.Box)
         graph_layout = QVBoxLayout(graph_layout_frame)
 
-        # QLabel 초기화
+        # 첫 번째 레이아웃에 이미지 추가
         self.video_label = QLabel(self)
-        image_layout.addWidget(self.video_label)
+        self.video_label.setAlignment(Qt.AlignCenter)
+        video_layout.addWidget(self.video_label)
 
+        # 두 번째 레이아웃에 데이터 추가
+
+        self.status_label = QLabel("Status : Normal", self)
+        font = self.status_label.font()
+        font.setPointSize(font.pointSize() + 10)
+        self.status_label.setFont(font)
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setStyleSheet("background-color: green")
+        data_layout.addWidget(self.status_label)
+        
         self.image_label = QLabel(self)
-        image_layout.addWidget(self.image_label)
+        self.image_label.setAlignment(Qt.AlignCenter)
+        data_layout.addWidget(self.image_label)
 
         # CSV 파일에서 데이터 읽어오기
         data = self.read_csv('./most_common_values.csv')
         data_text = "\n".join([f"{key}: {value}" for key, value in data.items()])
-        self.data_label = QLabel(data_text, self)
-        data_layout.addWidget(self.data_label)
 
-        # 맷플롯립을 사용하여 원형 그래프 생성
+        # 세 번째 레이아웃에 그래프 추가
         self.graph_label = QLabel(self)
+        self.graph_label.setAlignment(Qt.AlignCenter)
         self.create_pie_chart(data)
         graph_layout.addWidget(self.graph_label)
 
-        # 레이아웃에 추가
-        layout.addWidget(image_layout_frame, 4)
-        layout.addWidget(data_layout_frame, 1)
-        layout.addWidget(graph_layout_frame, 1)
-        self.setFixedSize(1400, 800)
+        # 상단 레이아웃에 추가
+        top_layout.addWidget(video_layout_frame, 1)
+        top_layout.addWidget(data_layout_frame, 4)
+        top_layout.addWidget(graph_layout_frame, 1)
+
+        # 하단 레이아웃
+        bottom_layout = QVBoxLayout()
+
+        # 네 번째 레이아웃 (하나의 창)
+        button_layout_frame = QFrame(self)
+        button_layout_frame.setFrameShape(QFrame.Box)
+        button_layout = QHBoxLayout(button_layout_frame)
+
+        # 3개의 버튼 추가 각각의 버튼은 Foward / Stop / Backward
+        button_forward = QPushButton("Forward", self)
+        button2_stop = QPushButton("Stop", self)
+        button3_backward = QPushButton("Backward", self)
+        button_layout.addWidget(button_forward)
+        button_layout.addWidget(button2_stop)
+        button_layout.addWidget(button3_backward)
+
+        # 하단 레이아웃에 추가
+        bottom_layout.addWidget(button_layout_frame)
+
+        # 전체 레이아웃에 상단과 하단 레이아웃 추가
+        main_layout.addLayout(title_layout)
+        main_layout.addLayout(top_layout)
+        main_layout.addLayout(bottom_layout)
+
+        self.setFixedSize(1200, 600)
         self.setWindowTitle('Smart Factory GUI')
 
     def update_frame(self):
@@ -99,7 +149,7 @@ class MainWindow(QWidget):
         print("Class:", class_name[2:], end="")
 
         # 데이터 리스트에 클래스 추가
-        self.detect_list.append(class_name[2:])
+        self.detect_list.append(class_name[2:].strip())
 
         if time.time() - self.start_time >= 3:
             most_common_value = max(self.detect_list, key=self.detect_list.count)
@@ -109,7 +159,6 @@ class MainWindow(QWidget):
 
         # GUI 업데이트
         self.update_image()
-        self.update_data_label()
 
     def read_csv(self, filename):
         with open(filename, 'r') as file:
@@ -130,18 +179,33 @@ class MainWindow(QWidget):
         self.graph_label.setPixmap(pixmap)
 
     def update_image(self):
+        if not self.detect_list:
+            # self.detect_list가 비어 있으면 처리하지 않음
+            return
+        print(self.detect_list)
         most_common_value = max(self.detect_list, key=self.detect_list.count)
-        print(most_common_value)
+
+        # 이미지를 불러옴
         script_directory = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(script_directory, "img", f"{most_common_value}.png")
-        pixmap = QPixmap(image_path)
-        print(pixmap)
-        self.image_label.setPixmap(pixmap)
+        image = cv2.imread(image_path)
+        if image is not None:
+            # 이미지를 QLabel의 크기에 맞게 조절
+            image = cv2.resize(image, (self.image_label.width(), self.image_label.height()))
+            bytes_per_line = 3 * image.shape[1]
+            q_img = QImage(image.data, image.shape[1], image.shape[0], bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(q_img.rgbSwapped())
+            self.image_label.setPixmap(pixmap)
+        else:
+            self.image_label.setText("Image not detected")
+            
+        if most_common_value == "normal_bumper" or most_common_value == "normal_door" or most_common_value == "normal_mirror":
+            self.status_label.setText("Status: Normal")
+            self.status_label.setStyleSheet("background-color: green")
+        else:
+            self.status_label.setText("Status: Abnormal")
+            self.status_label.setStyleSheet("background-color: red")
 
-    def update_data_label(self):
-        data = self.read_csv('./most_common_values.csv')
-        data_text = "\n".join([f"{key}: {value}" for key, value in data.items()])
-        self.data_label.setText(data_text)
 
     def save_to_csv(self, most_common_value):
         with open('./most_common_values.csv', 'w', newline='') as csvfile:
