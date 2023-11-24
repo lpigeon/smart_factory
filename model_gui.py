@@ -17,9 +17,6 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # GUI 초기화
-        self.initUI()
-
         # OpenCV 카메라 초기화
         self.cap = cv2.VideoCapture(0)  # 0은 기본 카메라
 
@@ -35,6 +32,30 @@ class MainWindow(QWidget):
         # 변수 초기화
         self.start_time = time.time()
         self.detect_list = []
+        
+        # 상태 변수 초기화
+        self.normal_door_count = 0
+        self.normal_bumper_count = 0
+        self.normal_glass_count = 0
+        self.broken_door_count = 0
+        self.broken_bumper_count = 0
+        self.broken_mirror_count = 0
+        
+        # CSV 파일에서 데이터 읽어오기
+        self.data = self.read_csv('./most_common_values.csv')
+        self.data_text = "\n".join([f"{key}: {value}" for key, value in self.data.items()])
+        
+        self.datas = {
+            'Normal Door': self.normal_door_count,
+            'Normal Bumper': self.normal_bumper_count,
+            'Normal Mirror': self.normal_glass_count,
+            'Broken Door': self.broken_door_count,
+            'Broken Bumper': self.broken_bumper_count,
+            'Broken Mirror': self.broken_mirror_count,
+        }
+        
+        # GUI 초기화
+        self.initUI()
 
     def initUI(self):
         # 전체 레이아웃 설정
@@ -85,15 +106,11 @@ class MainWindow(QWidget):
         self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignCenter)
         data_layout.addWidget(self.image_label)
-
-        # CSV 파일에서 데이터 읽어오기
-        data = self.read_csv('./most_common_values.csv')
-        data_text = "\n".join([f"{key}: {value}" for key, value in data.items()])
-
+        
         # 세 번째 레이아웃에 그래프 추가
         self.graph_label = QLabel(self)
         self.graph_label.setAlignment(Qt.AlignCenter)
-        self.create_pie_chart(data)
+        self.create_pie_chart(self.datas)
         graph_layout.addWidget(self.graph_label)
 
         # 상단 레이아웃에 추가
@@ -132,6 +149,7 @@ class MainWindow(QWidget):
         # OpenCV 비디오 업데이트
         ret, frame = self.cap.read()
         if ret:
+            frame = cv2.flip(frame, 1)
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
             q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
@@ -153,12 +171,28 @@ class MainWindow(QWidget):
 
         if time.time() - self.start_time >= 3:
             most_common_value = max(self.detect_list, key=self.detect_list.count)
+            
+            # 상태별로 카운트 증가
+            if most_common_value == "normal_door":
+                self.normal_door_count += 1
+            elif most_common_value == "normal_bumper":
+                self.normal_bumper_count += 1
+            elif most_common_value == "normal_glass":
+                self.normal_glass_count += 1
+            elif most_common_value == "broken_door":
+                self.broken_door_count += 1
+            elif most_common_value == "broken_bumper":
+                self.broken_bumper_count += 1
+            elif most_common_value == "broken_mirror":
+                self.broken_mirror_count += 1
+                
             self.save_to_csv(most_common_value)
             self.detect_list = []
             self.start_time = time.time()
 
         # GUI 업데이트
         self.update_image()
+        self.update_pie_chart()
 
     def read_csv(self, filename):
         with open(filename, 'r') as file:
@@ -168,6 +202,13 @@ class MainWindow(QWidget):
         return data
 
     def create_pie_chart(self, data):
+        # 0 값이 있는 항목을 제외하기 위해 딕셔너리 수정
+        data = {key: value for key, value in data.items() if value != 0}
+
+        if not data:
+            # 모든 값이 0이면 하나의 세그먼트로 구성된 더미 차트를 생성
+            data = {'데이터 없음': 1}
+
         fig, ax = plt.subplots()
         ax.pie(data.values(), labels=data.keys(), autopct='%1.1f%%', startangle=90)
         ax.axis('equal')
@@ -182,7 +223,6 @@ class MainWindow(QWidget):
         if not self.detect_list:
             # self.detect_list가 비어 있으면 처리하지 않음
             return
-        print(self.detect_list)
         most_common_value = max(self.detect_list, key=self.detect_list.count)
 
         # 이미지를 불러옴
@@ -199,7 +239,7 @@ class MainWindow(QWidget):
         else:
             self.image_label.setText("Image not detected")
             
-        if most_common_value == "normal_bumper" or most_common_value == "normal_door" or most_common_value == "normal_mirror":
+        if most_common_value == "normal_bumper" or most_common_value == "normal_door" or most_common_value == "normal_glass":
             self.status_label.setText("Status: Normal")
             self.status_label.setStyleSheet("background-color: green")
         else:
@@ -212,8 +252,18 @@ class MainWindow(QWidget):
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(["Class", "Timestamp"])  # Header
             csv_writer.writerow([most_common_value, time.strftime("%Y-%m-%d %H:%M:%S")])
-            print("Saved to CSV file")
 
+    def update_pie_chart(self):
+        datas = {
+            'Normal Door': self.normal_door_count,
+            'Normal Bumper': self.normal_bumper_count,
+            'Normal Mirror': self.normal_glass_count,
+            'Broken Door': self.broken_door_count,
+            'Broken Bumper': self.broken_bumper_count,
+            'Broken Mirror': self.broken_mirror_count,
+        }
+        self.create_pie_chart(datas)
+        
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     mainWindow = MainWindow()
