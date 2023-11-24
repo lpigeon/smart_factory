@@ -1,0 +1,6 @@
+motorcycle
+bicycle
+ship
+train
+airplane
+car

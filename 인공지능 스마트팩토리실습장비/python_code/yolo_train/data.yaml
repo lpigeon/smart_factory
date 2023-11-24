@@ -1,0 +1,5 @@
+train: /content/train/images
+val: /content/train/images
+
+nc: 6
+names: ['motorcycle', 'bicycle', 'ship', 'train', 'airplane', 'car']
