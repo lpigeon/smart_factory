@@ -1,7 +1,7 @@
 import sys
 import cv2
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -39,9 +39,19 @@ class MainWindow(QWidget):
     def initUI(self):
         # 레이아웃 설정
         layout = QHBoxLayout(self)
-        image_layout = QVBoxLayout()
-        data_layout = QVBoxLayout()
-        graph_layout = QVBoxLayout()
+
+        # 각 레이아웃에 프레임 추가
+        image_layout_frame = QFrame(self)
+        image_layout_frame.setFrameShape(QFrame.Box)
+        image_layout = QVBoxLayout(image_layout_frame)
+
+        data_layout_frame = QFrame(self)
+        data_layout_frame.setFrameShape(QFrame.Box)
+        data_layout = QVBoxLayout(data_layout_frame)
+
+        graph_layout_frame = QFrame(self)
+        graph_layout_frame.setFrameShape(QFrame.Box)
+        graph_layout = QVBoxLayout(graph_layout_frame)
 
         # QLabel 초기화
         self.video_label = QLabel(self)
@@ -62,12 +72,11 @@ class MainWindow(QWidget):
         graph_layout.addWidget(self.graph_label)
 
         # 레이아웃에 추가
-        layout.addLayout(image_layout, 4)
-        layout.addLayout(data_layout, 1)
-        layout.addLayout(graph_layout, 1)
-
-        self.setWindowTitle('OpenCV and PyQt Example')
-        self.setGeometry(100, 100, 800, 600)
+        layout.addWidget(image_layout_frame, 4)
+        layout.addWidget(data_layout_frame, 1)
+        layout.addWidget(graph_layout_frame, 1)
+        self.setFixedSize(1400, 800)
+        self.setWindowTitle('Smart Factory GUI')
 
     def update_frame(self):
         # OpenCV 비디오 업데이트
@@ -125,15 +134,9 @@ class MainWindow(QWidget):
         print(most_common_value)
         script_directory = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(script_directory, "img", f"{most_common_value}.png")
-        image = cv2.imread(image_path)
-        if image is not None:
-            height, width, channel = image.shape
-            bytes_per_line = 3 * width
-            q_img = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(q_img.rgbSwapped())
-            self.image_label.setPixmap(pixmap)
-        else:
-            self.image_label.clear()
+        pixmap = QPixmap(image_path)
+        print(pixmap)
+        self.image_label.setPixmap(pixmap)
 
     def update_data_label(self):
         data = self.read_csv('./most_common_values.csv')
