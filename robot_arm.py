@@ -107,7 +107,7 @@ while True:
     elif "PS_1=ON" in serial_receive_data:
         print(serial_receive_data)
         serial_receive_data = ""
-        if "지하철" in most_common_value or "오토바이" in most_common_value :
+        if "normal_door" in most_common_value or "normal_glass" in most_common_value or "normal_bumper" in most_common_value:
             time.sleep(0.5)
             send_conveyor_speed(0)
             print("물건이동시작")

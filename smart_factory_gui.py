@@ -167,7 +167,8 @@ class MainWindow(QWidget):
         print("Class:", class_name[2:], end="")
 
         # 데이터 리스트에 클래스 추가
-        self.detect_list.append(class_name[2:].strip())
+        if not class_name[2:].strip() == "background":
+            self.detect_list.append(class_name[2:].strip())
 
         if time.time() - self.start_time >= 3:
             most_common_value = max(self.detect_list, key=self.detect_list.count)
