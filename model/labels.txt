@@ -1,6 +1,7 @@
-0 normal_door
-1 normal_glass
-2 normal_bumper
-3 broken_door
-4 broken_glass
-5 broken_bumper
+0 background
+1 broken_door
+2 broken_glass
+3 broken_bumper
+4 normal_door
+5 normal_glass
+6 normal_bumper

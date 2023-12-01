@@ -39,7 +39,7 @@ class MainWindow(QWidget):
         self.normal_glass_count = 0
         self.broken_door_count = 0
         self.broken_bumper_count = 0
-        self.broken_mirror_count = 0
+        self.broken_glass_count = 0
         
         # CSV 파일에서 데이터 읽어오기
         self.data = self.read_csv('./most_common_values.csv')
@@ -48,10 +48,10 @@ class MainWindow(QWidget):
         self.datas = {
             'Normal Door': self.normal_door_count,
             'Normal Bumper': self.normal_bumper_count,
-            'Normal Mirror': self.normal_glass_count,
+            'Normal Glass': self.normal_glass_count,
             'Broken Door': self.broken_door_count,
             'Broken Bumper': self.broken_bumper_count,
-            'Broken Mirror': self.broken_mirror_count,
+            'Broken Glass': self.broken_glass_count,
         }
         
         # GUI 초기화
@@ -167,8 +167,7 @@ class MainWindow(QWidget):
         print("Class:", class_name[2:], end="")
 
         # 데이터 리스트에 클래스 추가
-        if not class_name[2:].strip() == "background":
-            self.detect_list.append(class_name[2:].strip())
+        self.detect_list.append(class_name[2:].strip())
 
         if time.time() - self.start_time >= 3:
             most_common_value = max(self.detect_list, key=self.detect_list.count)
@@ -184,8 +183,8 @@ class MainWindow(QWidget):
                 self.broken_door_count += 1
             elif most_common_value == "broken_bumper":
                 self.broken_bumper_count += 1
-            elif most_common_value == "broken_mirror":
-                self.broken_mirror_count += 1
+            elif most_common_value == "broken_glass":
+                self.broken_glass_count += 1
                 
             self.save_to_csv(most_common_value)
             self.detect_list = []
@@ -239,8 +238,11 @@ class MainWindow(QWidget):
             self.image_label.setPixmap(pixmap)
         else:
             self.image_label.setText("Image not detected")
-            
-        if most_common_value == "normal_bumper" or most_common_value == "normal_door" or most_common_value == "normal_glass":
+        
+        if most_common_value == "background":
+            self.status_label.setText("Status: -")
+            self.status_label.setStyleSheet("background-color: grey")
+        elif most_common_value == "normal_bumper" or most_common_value == "normal_door" or most_common_value == "normal_glass":
             self.status_label.setText("Status: Normal")
             self.status_label.setStyleSheet("background-color: green")
         else:
@@ -249,19 +251,20 @@ class MainWindow(QWidget):
 
 
     def save_to_csv(self, most_common_value):
-        with open('./most_common_values.csv', 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(["Class", "Timestamp"])  # Header
-            csv_writer.writerow([most_common_value, time.strftime("%Y-%m-%d %H:%M:%S")])
+        if most_common_value != "background":
+            with open('./most_common_values.csv', 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(["Class", "Timestamp"])  # Header
+                csv_writer.writerow([most_common_value, time.strftime("%Y-%m-%d %H:%M:%S")])
 
     def update_pie_chart(self):
         datas = {
             'Normal Door': self.normal_door_count,
             'Normal Bumper': self.normal_bumper_count,
-            'Normal Mirror': self.normal_glass_count,
+            'Normal Glass': self.normal_glass_count,
             'Broken Door': self.broken_door_count,
             'Broken Bumper': self.broken_bumper_count,
-            'Broken Mirror': self.broken_mirror_count,
+            'Broken Glass': self.broken_glass_count,
         }
         self.create_pie_chart(datas)
         

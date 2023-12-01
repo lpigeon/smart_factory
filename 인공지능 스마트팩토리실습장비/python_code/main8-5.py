@@ -108,7 +108,7 @@ while True:
         print(serial_receive_data)
         serial_receive_data = ""
         if "지하철" in most_common_value or "오토바이" in most_common_value :
-            time.sleep(0.5)
+            time.sleep(1)
             send_conveyor_speed(0)
             print("물건이동시작")
 

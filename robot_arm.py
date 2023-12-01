@@ -58,7 +58,7 @@ def send_catch_on_off(on_off):
     else:
         ser.write("CATCH=OFF\n".encode())
         
-def read_csv(self, filename):
+def read_csv(filename):
     with open(most_common_value_file, 'r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         row = next(csv_reader)
@@ -69,6 +69,7 @@ def read_csv(self, filename):
 ser = connect_to_arduino_uno()
 
 most_common_value_file = "most_common_values.csv"
+most_common_value = ""
 
 send_servo_1_angle(80)
 send_servo_2_angle(180)
@@ -107,7 +108,7 @@ while True:
     elif "PS_1=ON" in serial_receive_data:
         print(serial_receive_data)
         serial_receive_data = ""
-        if "normal_door" in most_common_value or "normal_glass" in most_common_value or "normal_bumper" in most_common_value:
+        if "broken_door" in most_common_value or "broken_glass" in most_common_value or "broken_bumper" in most_common_value:
             time.sleep(0.5)
             send_conveyor_speed(0)
             print("물건이동시작")
