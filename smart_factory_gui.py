@@ -126,13 +126,15 @@ class MainWindow(QWidget):
         button_layout_frame.setFrameShape(QFrame.Box)
         button_layout = QHBoxLayout(button_layout_frame)
 
-        # 3개의 버튼 추가 각각의 버튼은 Foward / Stop / Backward
-        button_forward = QPushButton("Forward", self)
-        button2_stop = QPushButton("Stop", self)
-        button3_backward = QPushButton("Backward", self)
-        button_layout.addWidget(button_forward)
-        button_layout.addWidget(button2_stop)
-        button_layout.addWidget(button3_backward)
+        button_normalization = QPushButton("Normalization", self)
+        button_stop = QPushButton("Stop", self)
+        button_layout.addWidget(button_stop)
+        button_layout.addWidget(button_normalization)
+
+        
+        # Connect button signals to functions
+        button_normalization.clicked.connect(lambda: self.save_button_value(1))
+        button_stop.clicked.connect(lambda: self.save_button_value(0))
 
         # 하단 레이아웃에 추가
         bottom_layout.addWidget(button_layout_frame)
@@ -194,6 +196,18 @@ class MainWindow(QWidget):
         self.update_image()
         self.update_pie_chart()
 
+    def save_button_value(self, value):
+            with open('./button_value.csv', 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow([value])
+                
+    def save_to_csv(self, most_common_value):
+        if most_common_value != "background":
+            with open('./most_common_values.csv', 'w', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                csv_writer.writerow(["Class", "Timestamp"])  # Header
+                csv_writer.writerow([most_common_value, time.strftime("%Y-%m-%d %H:%M:%S")])
+                
     def read_csv(self, filename):
         with open(filename, 'r') as file:
             reader = csv.reader(file)
@@ -248,14 +262,6 @@ class MainWindow(QWidget):
         else:
             self.status_label.setText("Status: Abnormal")
             self.status_label.setStyleSheet("background-color: red")
-
-
-    def save_to_csv(self, most_common_value):
-        if most_common_value != "background":
-            with open('./most_common_values.csv', 'w', newline='') as csvfile:
-                csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(["Class", "Timestamp"])  # Header
-                csv_writer.writerow([most_common_value, time.strftime("%Y-%m-%d %H:%M:%S")])
 
     def update_pie_chart(self):
         datas = {

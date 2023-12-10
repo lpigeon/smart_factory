@@ -2,7 +2,7 @@ import serial
 import time
 
 # 시리얼 포트와 통신 속도를 설정합니다.
-port = '/dev/cu.usbmodem1301'  # 시리얼 포트 번호에 따라 변경하세요.
+port = '/dev/cu.usbmodem1101'  # 시리얼 포트 번호에 따라 변경하세요.
 baudrate = 9600  # 통신 속도에 따라 변경하세요.
 
 # 시리얼 포트와 연결합니다.

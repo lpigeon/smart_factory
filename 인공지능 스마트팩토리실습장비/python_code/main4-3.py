@@ -6,7 +6,7 @@ import time
 def connect_to_arduino_uno():
     ports = serial.tools.list_ports.comports()
     for port in ports:
-        if "Arduino Uno" in port.description:
+        if "IOUSBHostDevice" in port.description:
             try:
                 ser = serial.Serial(port.device, baudrate=9600)
                 return ser

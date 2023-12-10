@@ -73,6 +73,25 @@ def read_button_value(filename):
         button_value = int(row[0])
     return button_value
 
+def send_lamp_red(on_off):
+    if on_off:
+        ser.write("LAMP_RED=ON\n".encode())
+    else:
+        ser.write("LAMP_RED=OFF\n".encode())
+
+def send_lamp_yellow(on_off):
+    if on_off:
+        ser.write("LAMP_YELLOW=ON\n".encode())
+    else:
+        ser.write("LAMP_YELLOW=OFF\n".encode())
+
+def send_lamp_green(on_off):
+    if on_off:
+        ser.write("LAMP_GREEN=ON\n".encode())
+    else:
+        ser.write("LAMP_GREEN=OFF\n".encode())
+
+
 def move_robot_arm(servo_1_angle, servo_2_angle, servo_3_angle):
     time.sleep(1)
     send_conveyor_speed(0)
@@ -123,59 +142,86 @@ send_servo_2_angle(180)
 send_servo_3_angle(100)
 send_catch_on_off(False)
 
+button_value = 1
 
 # 쓰레드를 시작합니다.
 t1 = threading.Thread(target=serial_read_thread)
 t1.daemon = True
 t1.start()
 
-trial = 1
-
-
 time.sleep(2.0)
 print("start")
 serial_receive_data = ""
 image_detect_on_off = False
+
+send_lamp_green(True)
+send_lamp_yellow(False)
+send_lamp_red(False)
+                
 while True:
-    # 투입쪽에 물건이 들어오면 컨베이어 동작
-    if "PS_3=ON" in serial_receive_data:
-        send_conveyor_speed(255)
-        print(serial_receive_data)
-    # 중앙센서 검출
-    elif "PS_2=ON" in serial_receive_data:
-        send_conveyor_speed(0)
-        time.sleep(2)
-        print(serial_receive_data)
-        serial_receive_data = ""
-        image_detect_on_off = True
-        send_conveyor_speed(255)
-    elif "PS_2=OFF" in serial_receive_data:
-        print(serial_receive_data)
-        serial_receive_data = ""
-        image_detect_on_off = False
-    # 출구에서 물건이 들어오면
-    elif "PS_1=ON" in serial_receive_data:
-        print(serial_receive_data)
-        serial_receive_data = ""
-        
-        most_common_value = read_csv(most_common_value_file)
-        print("검출된 객체는:",most_common_value)
-        
-        if "normal_door" in most_common_value or "normal_bumper" in most_common_value or "normal_glass" in most_common_value:
-            move_robot_arm(130, 50, 95)
-        elif "broken_door" in most_common_value:
-            move_robot_arm(130, 80, 95)
-        elif "broken_bumper" in most_common_value:
-            move_robot_arm(130, 110, 95)
-        elif "broken_glass" in most_common_value:
-            move_robot_arm(130, 135, 84)
-        else:
-            print("알수없는 물건입니다.")
+    if button_value == 1:
+        button_value = read_button_value("button_value.csv")
+        # 투입쪽에 물건이 들어오면 컨베이어 동작
+        if "PS_3=ON" in serial_receive_data:
+            send_lamp_green(True)
+            send_lamp_yellow(False)
+            send_lamp_red(False)
+            send_conveyor_speed(255)
+            print(serial_receive_data)
+        # 중앙센서 검출
+        elif "PS_2=ON" in serial_receive_data:
             send_conveyor_speed(0)
-        
-    # 출구에서 물건이 나가면 컨베이어 멈춤
-    elif "PS_1=OFF" in serial_receive_data:
-        print(serial_receive_data)
-        serial_receive_data = ""
+            time.sleep(2)
+            print(serial_receive_data)
+            serial_receive_data = ""
+            image_detect_on_off = True
+            send_conveyor_speed(255)
+        elif "PS_2=OFF" in serial_receive_data:
+            print(serial_receive_data)
+            serial_receive_data = ""
+            image_detect_on_off = False
+        # 출구에서 물건이 들어오면
+        elif "PS_1=ON" in serial_receive_data:
+            print(serial_receive_data)
+            serial_receive_data = ""
+            
+            for _ in range(10):
+                most_common_value = read_csv(most_common_value_file)
+            print("검출된 객체는:",most_common_value)
+            
+            if "normal_door" in most_common_value or "normal_bumper" in most_common_value or "normal_glass" in most_common_value:
+                send_lamp_green(True)
+                send_lamp_yellow(False)
+                send_lamp_red(False)
+                move_robot_arm(130, 50, 95)
+            elif "broken_door" in most_common_value:
+                send_lamp_green(False)
+                send_lamp_yellow(True)
+                send_lamp_red(False)
+                move_robot_arm(130, 80, 95)
+            elif "broken_bumper" in most_common_value:
+                send_lamp_green(False)
+                send_lamp_yellow(True)
+                send_lamp_red(False)
+                move_robot_arm(130, 110, 95)
+            elif "broken_glass" in most_common_value:
+                send_lamp_green(False)
+                send_lamp_yellow(True)
+                send_lamp_red(False)
+                move_robot_arm(130, 135, 84)
+            else:
+                print("알수없는 물건입니다.")
+                send_conveyor_speed(0)
+            
+        # 출구에서 물건이 나가면 컨베이어 멈춤
+        elif "PS_1=OFF" in serial_receive_data:
+            print(serial_receive_data)
+            serial_receive_data = ""
+            send_conveyor_speed(0)
+    elif button_value == 0:
+        send_lamp_green(False)
+        send_lamp_yellow(False)
+        send_lamp_red(True)
         send_conveyor_speed(0)
+        
         
